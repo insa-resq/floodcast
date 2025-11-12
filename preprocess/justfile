@@ -1,0 +1,82 @@
+alti_db_url := "https://geoservices.ign.fr/bdalti"
+alti_base_url := "https://data.geopf.fr/telechargement/download/BDALTI"
+
+# Download 25m elevation model for departement (e.g. 031)
+download departement_number:
+    #!/usr/bin/env bash
+    set -euxo pipefail
+    folder_name_pattern="BDALTIV2_2-0_25M_ASC_LAMB93-IGN69_D{{ departement_number }}_.\{10\}"
+    # echo $folder_name_pattern
+    # echo {{ alti_base_url }}/$folder_name_pattern/$folder_name_pattern\.7z
+    curl -fsSL {{ alti_db_url }}\
+    | grep -o {{ alti_base_url }}/$folder_name_pattern/$folder_name_pattern\.7z\
+    | head -n1\
+    | xargs curl -fL -o data/dem-dep-{{ departement_number }}.7z
+
+# Extract and convert elevation model for departement (e.g. 031)
+process departement_number:
+    7z x data/dem-dep-{{ departement_number }}.7z -y -odata/dem-dep-{{ departement_number }}
+    mv data/dem-dep-{{ departement_number }}/*/*/1*/*/* data/dem-dep-{{ departement_number }}
+    @just convert data/dem-dep-{{ departement_number }}/*.asc
+    # rm -f data/dem-dep-{{ departement_number }}.7z
+    rm -rf data/dem-dep-{{ departement_number }}/BDALTIV2*/
+    rm -rf data/dem-dep-{{ departement_number }}/*.asc*
+
+# Convert files from asc to tiff, while also replacing 0 elevation with nan and fixing coordinate system
+convert +files:
+    #!/usr/bin/env bash
+    set -euxo pipefail
+    for file in {{ files }}; do
+        gdal_translate -of GTiff "$file" "${file%.asc}.tiff"
+        gdal_edit -a_srs EPSG:2154 "${file%.asc}.tiff"
+        gdal_calc -A "${file%.asc}.tiff" --outfile="${file%.asc}.tiff" --calc="numpy.where(A==0, numpy.nan, A)" --overwrite
+    done
+
+# Merge tiff files into a single tiff file
+merge out +files:
+    ls -1 {{ files }} > input_list.txt
+    gdal_merge -ot Float32 -of GTiff -a_nodata nan -init nan -o {{ out }} --optfile input_list.txt 
+    gdal_edit -a_srs EPSG:2154 {{ out }}
+    rm -f input_list.txt
+
+# Downscale tiff to grid of size (in meters)
+downscale in out size:
+    gdalwarp -tr {{ size }} {{ size }} -r average {{ in }} {{ out }}
+
+# Fill depressions in tiff file
+fill in out:
+    whitebox_tools --run="FillDepressions" --dem={{ in }} --output={{ out }} --fix_flats -v --compress_rasters=False
+
+# Compute flow directions in tiff file
+dir in out:
+    whitebox_tools --run="D8Pointer" --dem={{ in }} --output={{ out }} -v --compress_rasters=False
+
+# Compute flow accumulation in tiff file
+acc in out:
+    whitebox_tools --run="D8FlowAccumulation" --input={{ in }} --output={{ out }} --out_type=cells -v --compress_rasters=False
+
+# Compute slope in tiff file
+slope in out:
+    whitebox_tools --run="Slope" --dem={{ in }} --output={{ out }} --units=degrees -v --compress_rasters=False
+
+weights acc slopes out:
+    uv run weights.py {{ acc }} {{ slopes }} {{ out }}
+
+snap-points acc points out:
+    whitebox_tools -r=SnapPourPoints -v --pour_pts={{ points }} --flow_accum={{ acc }} -o={{ out }} --snap_dist=50.0 
+
+watershed dir points out:
+    whitebox_tools -r=Watershed -v --d8_pntr={{ dir }} --pour_pts={{ points }} -o={{ out }}
+
+distances dir basin weights out:
+    whitebox_tools -r=DownslopeFlowpathLength -v --d8_pntr={{ dir }} --watersheds={{ basin }} --weights={{ weights }} -o={{ out }}
+
+distance-all dem points:
+    just fill {{ dem }} {{ without_extension(dem) }}-filled.tiff
+    just dir {{ without_extension(dem) }}-filled.tiff {{ without_extension(dem) }}-dir.tiff
+    just acc {{ without_extension(dem) }}-filled.tiff {{ without_extension(dem) }}-acc.tiff
+    just slope {{ without_extension(dem) }}-filled.tiff {{ without_extension(dem) }}-slope.tiff
+    just weights {{ without_extension(dem) }}-acc.tiff {{ without_extension(dem) }}-slope.tiff {{ without_extension(dem) }}-weights.tiff
+    just snap-points {{ without_extension(dem) }}-acc.tiff {{ points }} {{ without_extension(points)}}-snap.shp
+    just watershed {{ without_extension(dem) }}-dir.tiff {{ without_extension(points)}}-snap.shp {{ without_extension(dem) }}-basin.tiff
+    just distances {{ without_extension(dem) }}-dir.tiff {{ without_extension(dem) }}-basin.tiff {{ without_extension(dem) }}-weights.tiff {{ without_extension(dem) }}-dist.tiff
