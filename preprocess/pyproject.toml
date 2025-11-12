@@ -1,0 +1,19 @@
+[project]
+name = "preprocess"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "matplotlib>=3.10.7",
+    "numpy>=2.3.4",
+    "rasterio>=1.4.3",
+    "seaborn>=0.13.2",
+    "whitebox>=2.3.6",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.14.4",
+    "ty>=0.0.1a25",
+]
