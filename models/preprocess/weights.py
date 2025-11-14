@@ -31,7 +31,7 @@ def compute_weights(
         np.clip((1 / N_CHANNEL) * (R_CHANNEL ** (2 / 3)) * np.sqrt(slope_data), 0.2, 5.0),
         np.clip((1 / N_HILL) * (H_HILL ** (2 / 3)) * np.sqrt(slope_data), 0.05, 0.2),
     )
-    v = np.nan_to_num(v, 0.01)
+    v = np.nan_to_num(v, nan=0.01)
     # v = np.clip(v, 0.01, 5.0)
     
     print(
