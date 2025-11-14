@@ -12,8 +12,3 @@ dependencies = [
     "whitebox>=2.3.6",
 ]
 
-[dependency-groups]
-dev = [
-    "ruff>=0.14.4",
-    "ty>=0.0.1a25",
-]
