@@ -1,0 +1,24 @@
+services:
+  weather-data-service:
+    build: .
+    command: uv run --package weather-data --with fastapi -- fastapi dev services/weather-data/main.py --host 0.0.0.0 --port 8000
+    ports:
+      - "8001:8000"
+    volumes:
+      - ./services/weather-data:/app/services/weather-data
+  flow-data-service:
+    build: .
+    command: uv run --package flow-data --with fastapi -- fastapi dev services/flow-data/main.py --host 0.0.0.0 --port 8000
+    depends_on: [weather-data-service]
+    ports:
+      - "8002:8000"
+    volumes:
+      - ./services/flow-data:/app/services/flow-data
+  gateway-service:
+    build: .
+    command: uv run --package gateway --with fastapi -- fastapi dev services/gateway/main.py --host 0.0.0.0 --port 8000
+    depends_on: [weather-data-service, flow-data-service]
+    volumes:
+      - ./services/gateway:/app/services/gateway
+    ports:
+      - "8000:8000"
