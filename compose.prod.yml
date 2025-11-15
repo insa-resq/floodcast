@@ -1,0 +1,17 @@
+services:
+  weather-data-service:
+    build: .
+    environment:
+      SERVICE_NAME: weather-data
+  flow-data-service:
+    build: .
+    environment:
+      SERVICE_NAME: flow-data
+    depends_on: [weather-data-service]
+  gateway-service:
+    build: .
+    environment:
+      SERVICE_NAME: gateway
+    depends_on: [weather-data-service, flow-data-service]
+    ports:
+      - "8000:8000"
