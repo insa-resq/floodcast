@@ -7,4 +7,4 @@ RUN uv sync
 
 ENV SERVICE_NAME=""
 
-CMD ["sh", "-c", "uv run --package $SERVICE_NAME --with fastapi -- fastapi run services/$SERVICE_NAME/main.py --host 0.0.0.0 --port 8000"]
+CMD ["sh", "-c", "uv run --package $SERVICE_NAME --with fastapi -- fastapi run services/$SERVICE_NAME/app/main.py --host 0.0.0.0 --port 8000"]
