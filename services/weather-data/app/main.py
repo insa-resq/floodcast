@@ -1,7 +1,11 @@
-from fastapi import FastAPI, HTTPException
+from datetime import datetime
+from typing import Annotated
+
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import FileResponse
-from datetime import datetime, timedelta
-from app.fetch import fetch_rainfall_local, UnavailableData
+
+from app.fetch import UnavailableData, fetch_rainfall_local, fetch_rainfall_availability_local
+from app.models import AvailabilityPeriod
 
 app = FastAPI()
 
@@ -9,6 +13,14 @@ app = FastAPI()
 @app.get("/")
 async def root():
     return {"message": "Hello from weather-data service!"}
+
+
+@app.get("/availability", response_model=list[AvailabilityPeriod])
+async def get_availability():
+    """
+    Get the list of available rainfall periods.
+    """
+    return list(fetch_rainfall_availability_local())
 
 
 @app.get(
@@ -27,17 +39,14 @@ async def root():
         },
     },
 )
-async def get_rainfall(
-    time: datetime = datetime.now(),
-    span: timedelta = timedelta(hours=1),
-):
+async def get_rainfall(availability: Annotated[AvailabilityPeriod, Query()]):
     """
     Get a TIFF format rainfall map. Unit: ??.
 
     Currently only accepts past dates if downloaded and a one hour span (using comephores).
     """
     try:
-        path = fetch_rainfall_local(time, span)
+        path = fetch_rainfall_local(availability)
         return FileResponse(path, media_type="image/tiff")
 
     except UnavailableData:
