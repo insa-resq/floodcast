@@ -1,0 +1,13 @@
+[project]
+name = "floodcast"
+version = "0.1.0"
+description = "Flood prediction microservices."
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = []
+
+[tool.uv.workspace]
+members = ["models/*", "services/*"]
+
+[tool.ty.environment]
+root = ["services/weather-data/", "services/flow-data/", "services/gateway/"]
