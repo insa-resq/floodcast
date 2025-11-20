@@ -23,7 +23,7 @@ process departement_number:
     rm -rf data/dem-dep-{{ departement_number }}/*.asc*
 
 # Convert files from asc to tiff, while also replacing 0 elevation with nan and fixing coordinate system
-convert +files:
+_convert +files:
     #!/usr/bin/env bash
     set -euxo pipefail
     for file in {{ files }}; do
@@ -43,40 +43,22 @@ merge out +files:
 downscale in out size:
     gdalwarp -tr {{ size }} {{ size }} -r average {{ in }} {{ out }}
 
-# Fill depressions in tiff file
-fill in out:
-    whitebox_tools --run="FillDepressions" --dem={{ in }} --output={{ out }} --fix_flats -v --compress_rasters=False
-
-# Compute flow directions in tiff file
-dir in out:
-    whitebox_tools --run="D8Pointer" --dem={{ in }} --output={{ out }} -v --compress_rasters=False
-
-# Compute flow accumulation in tiff file
-acc in out:
-    whitebox_tools --run="D8FlowAccumulation" --input={{ in }} --output={{ out }} --out_type=cells -v --compress_rasters=False
-
-# Compute slope in tiff file
-slope in out:
-    whitebox_tools --run="Slope" --dem={{ in }} --output={{ out }} --units=degrees -v --compress_rasters=False
-
-weights acc slopes out:
-    uv run weights.py {{ acc }} {{ slopes }} {{ out }}
-
-snap-points acc points out:
-    whitebox_tools -r=SnapPourPoints -v --pour_pts={{ points }} --flow_accum={{ acc }} -o={{ out }} --snap_dist=50.0 
-
-watershed dir points out:
-    whitebox_tools -r=Watershed -v --d8_pntr={{ dir }} --pour_pts={{ points }} -o={{ out }}
-
-distances dir basin weights out:
-    whitebox_tools -r=DownslopeFlowpathLength -v --d8_pntr={{ dir }} --watersheds={{ basin }} --weights={{ weights }} -o={{ out }}
-
-distance-all dem points:
-    just fill {{ dem }} {{ without_extension(dem) }}-filled.tiff
-    just dir {{ without_extension(dem) }}-filled.tiff {{ without_extension(dem) }}-dir.tiff
-    just acc {{ without_extension(dem) }}-filled.tiff {{ without_extension(dem) }}-acc.tiff
-    just slope {{ without_extension(dem) }}-filled.tiff {{ without_extension(dem) }}-slope.tiff
-    just weights {{ without_extension(dem) }}-acc.tiff {{ without_extension(dem) }}-slope.tiff {{ without_extension(dem) }}-weights.tiff
-    just snap-points {{ without_extension(dem) }}-acc.tiff {{ points }} {{ without_extension(points)}}-snap.shp
-    just watershed {{ without_extension(dem) }}-dir.tiff {{ without_extension(points)}}-snap.shp {{ without_extension(dem) }}-basin.tiff
-    just distances {{ without_extension(dem) }}-dir.tiff {{ without_extension(dem) }}-basin.tiff {{ without_extension(dem) }}-weights.tiff {{ without_extension(dem) }}-dist.tiff
+[doc('Compute a range of information about the input DEM, including watershed delineation and downslope distance to point
+Outputs a bunch of new files, so move your file into a folder before running')]
+distance dem +points:
+    #!/usr/bin/env bash
+    dir=$(dirname -- {{ dem }})
+    whitebox_tools --run="FillDepressions" --dem={{ dem }} --output=$dir/filled.tiff --fix_flats --compress_rasters=False
+    whitebox_tools --run="D8Pointer" --dem=$dir/filled.tiff --output=$dir/directions.tiff --compress_rasters=False
+    whitebox_tools --run="D8FlowAccumulation" --input=$dir/filled.tiff --output=$dir/acc.tiff --out_type=cells --compress_rasters=False
+    whitebox_tools --run="Slope" --dem=$dir/filled.tiff --output=$dir/slope.tiff --units=degrees --compress_rasters=False
+    uv run weights.py $dir/acc.tiff $dir/slope.tiff $dir/weights.tiff
+    for point in {{ points }}; do
+        snap="${point%.*}-snap.shp"
+        basin="${point%.*}-basin.tiff"
+        dist="${point%.*}-dist.tiff"
+        echo $snap
+        whitebox_tools -r=SnapPourPoints --pour_pts=$point --flow_accum=$dir/acc.tiff -o=$snap --snap_dist=50.0 
+        whitebox_tools -r=Watershed --d8_pntr=$dir/directions.tiff --pour_pts=$snap -o=$basin
+        whitebox_tools -r=DownslopeFlowpathLength --d8_pntr=$dir/directions.tiff --watersheds=$basin --weights=$dir/weights.tiff -o=$dist
+    done
