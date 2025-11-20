@@ -1,0 +1,6 @@
+# e.g. just comephores 202509
+comephores month:
+    curl -fL https://object.files.data.gouv.fr/meteofrance/data/synchro_ftp/REANALYSES/COMEPHORE/H_COMEPHORE_{{month}}.tar --output-dir ./data -O
+    tar -xvf data/*.tar -C data/ --wildcards "*_ERR.gtif" --strip-components=1 
+    rm -f data/*.tar
+    
