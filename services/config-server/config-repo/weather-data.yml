@@ -1,0 +1,4 @@
+host: "weather-data-service"
+port: 8000
+cache_duration: 600
+log_level: "debug"

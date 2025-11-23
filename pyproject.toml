@@ -3,11 +3,26 @@ name = "floodcast"
 version = "0.1.0"
 description = "Flood prediction microservices."
 readme = "README.md"
-requires-python = ">=3.13"
-dependencies = []
+requires-python = ">=3.11"
+
+dependencies = [
+    "fastapi[standard]",  # fournit fastapi + uvicorn + watchfiles + cli
+    "httpx",
+    "pyyaml",
+]
 
 [tool.uv.workspace]
-members = ["models/*", "services/*"]
+members = [
+    "services/weather-data",
+    "services/flow-data",
+    "services/gateway",
+]
 
 [tool.ty.environment]
-root = ["services/weather-data/", "services/flow-data/", "services/gateway/"]
+root = [
+    "services/weather-data/",
+    "services/flow-data/",
+    "services/gateway/",
+    "services/config-server/",
+]
+

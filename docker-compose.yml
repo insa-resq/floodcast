@@ -1,0 +1,42 @@
+services:
+  config-server:
+    build: .
+    command: uv run --with fastapi --with pyyaml -- fastapi dev services/config-server/app/main.py --host 0.0.0.0 --port 8000
+    volumes:
+      - ./services/config-server:/app/services/config-server
+    ports:
+      - "8003:8000"
+
+  weather-data-service:
+    build: .
+    command: uv run --package weather-data --with fastapi --with httpx -- fastapi dev services/weather-data/app/main.py --host 0.0.0.0 --port 8000
+    depends_on:
+      - config-server
+    ports:
+      - "8001:8000"
+    volumes:
+      - ./services/weather-data:/app/services/weather-data
+
+  flow-data-service:
+    build: .
+    environment:
+      - SERVICE_NAME=flow-data
+    depends_on:
+      - config-server
+      - weather-data-service
+
+  gateway-service:
+    build: .
+    environment:
+      - SERVICE_NAME=gateway
+    depends_on:
+      - config-server
+      - weather-data-service
+      - flow-data-service
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./services/gateway:/app/services/gateway
+
+
+
