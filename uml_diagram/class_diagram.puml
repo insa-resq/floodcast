@@ -1,0 +1,115 @@
+@startuml
+title Flood Prediction System – Class Diagram (API-focused)
+
+' =========================
+' Actors
+' =========================
+class User {
+    - ip : String
+    - departments : List<String>
+    + subscribe(): void
+    + getFloodStatus(): List<Flood>
+    + getFloodDetails(floodId: int): Flood
+    + getSegmentDetails(segmentId: int): Segment
+}
+
+class ExternalAPI {
+    + fetchData(): Data
+}
+
+' =========================
+' Core system classes
+' =========================
+class DashboardBackend {
+    + subscribeSubscriber(user: User)
+    + getAllFloods(): List<Flood>
+    + getFloodById(floodId: int): Flood
+    + getFloodMap(floodId: int): Map
+    + getAllSegments(): List<Segment>
+    + getSegmentById(segmentId: int): Segment
+}
+
+class AlertService {
+    + sendFloodAlert(flood: Flood, subscribers: List<User>)
+}
+
+class MLPredictionService {
+    + simulateFlood(): Flood
+}
+
+class DataService {
+    + fetchRawData(): Data
+    + saveFloodData(flood: Flood)
+    + getCurrentFloods(filter: Map): List<Flood>
+}
+
+class DataCleaningService {
+    + clean(rawData: Data): Data
+}
+
+class GISService {
+    + getSegmentDetails(segmentId: int): Segment
+    + generateFloodMap(flood: Flood): Map
+}
+
+class Scheduler {
+    + triggerSimulation()
+}
+
+class LoggingMonitoring {
+    + logEvent(message: String)
+}
+
+' =========================
+' Domain classes
+' =========================
+class Flood {
+    - floodId : int
+    - segmentId : int
+    - severity : String
+    - probability : float
+    - date : Date
+}
+
+class Segment {
+    - segmentId : int
+    - lat : float
+    - long : float
+    - bbox : String
+}
+
+class Data {
+    - source : String
+    - timestamp : Date
+    - payload : String
+}
+
+class Map {
+    - imageUrl : String
+    - bounds : String
+}
+
+' =========================
+' Relationships
+' =========================
+
+User --> DashboardBackend
+User --> AlertService
+
+DashboardBackend --> DataService
+DashboardBackend --> GISService
+DashboardBackend --> AlertService
+
+MLPredictionService --> DataService
+
+DataService --> DataCleaningService
+DataService --> ExternalAPI
+
+Scheduler --> MLPredictionService
+
+DataService --> Flood
+GISService --> Segment
+GISService --> Map
+
+@enduml
+

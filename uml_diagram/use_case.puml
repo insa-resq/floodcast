@@ -1,0 +1,33 @@
+@startuml
+' Command to orient the diagram from left to right
+left to right direction
+
+actor User as "User"
+actor ExternalAPI as "External API"
+
+rectangle "Flood Prediction System" {
+    usecase "Subscribe to alerts" as UC1
+    usecase "Check floods" as UC2
+    usecase "Receive flood alert" as UC3
+    usecase "Consult flood details" as UC4
+    usecase "Consult  segments" as UC5
+    usecase "Flood simulation" as UC6
+    usecase "Retrieve data" as UC7
+}
+
+' Interactions between actors and use cases
+User --> UC1
+User --> UC2
+User --> UC3
+User --> UC4
+
+ExternalAPI --> UC7
+
+' Include relationships
+UC3 .> UC1 : <<include>>
+UC3 <.. UC6 : <<include>>
+UC7 <.. UC6 : <<include>>
+UC4 ..> UC5 : <<include>>
+
+@enduml
+
