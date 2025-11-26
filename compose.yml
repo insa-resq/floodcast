@@ -6,6 +6,7 @@ services:
       - "8001:8000"
     volumes:
       - ./services/weather-data:/app/services/weather-data
+      - ./models/comephores/data:/app/services/weather-data/comephores
   flow-data-service:
     build: .
     command: uv run --package flow-data --with fastapi -- fastapi dev services/flow-data/app/main.py --host 0.0.0.0 --port 8000

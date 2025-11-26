@@ -2,3 +2,6 @@
 uv.lock
 __pycache__
 .venv
+*.tar
+*.gtif
+*.tiff
