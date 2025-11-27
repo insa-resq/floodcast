@@ -1,5 +1,5 @@
 @startuml
-title Flood Prediction System – Class Diagram (API-focused)
+title Flood Prediction System – Class Diagram
 
 ' =========================
 ' Actors
@@ -20,7 +20,7 @@ class ExternalAPI {
 ' =========================
 ' Core system classes
 ' =========================
-class DashboardBackend {
+class Gateway {
     + subscribeSubscriber(user: User)
     + getAllFloods(): List<Flood>
     + getFloodById(floodId: int): Flood
@@ -76,12 +76,6 @@ class Segment {
     - lat : float
     - long : float
     - bbox : String
-}
-
-class Data {
-    - source : String
-    - timestamp : Date
-    - payload : String
 }
 
 class Map {

@@ -4,7 +4,7 @@ title Flood Prediction System - Complete Sequence Diagram
 actor User
 
 box "Flood Prediction System" #LightBlue
-    participant "Dashboard Back-End" as s1
+    participant "Gateway" as s1
     participant "Alert Service" as s4
     participant "ML Prediction Service" as s2
     participant "Data Service" as s3
