@@ -1,0 +1,11 @@
+service_name: "gateway"
+
+routes:
+  weather_api: 
+    url: "http://weather-data-service:8000"
+  flow_api: 
+    url: "http://flow-data-service:8000"
+
+port: 8000
+
+log_level: "info"
