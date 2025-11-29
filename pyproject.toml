@@ -5,17 +5,14 @@ description = "Flood prediction microservices."
 readme = "README.md"
 requires-python = ">=3.11"
 
-dependencies = [
-    "fastapi[standard]",  # fournit fastapi + uvicorn + watchfiles + cli
-    "httpx",
-    "pyyaml",
-]
+dependencies = []
 
 [tool.uv.workspace]
 members = [
     "services/weather-data",
     "services/flow-data",
     "services/gateway",
+    "services/config-server",
 ]
 
 [tool.ty.environment]
