@@ -6,6 +6,12 @@ app = FastAPI()
 
 CONFIG_DIR = os.path.join(os.path.dirname(__file__), "../config-repo")
 
+# DO NOT REMOVE
+# Docker health check calls the root endpoint
+@app.get("/")
+async def root():
+    return "Hello from config service"
+
 @app.get("/config/{service_name}")
 async def get_config(service_name: str):
     filename = f"{service_name}.yml"

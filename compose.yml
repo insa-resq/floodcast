@@ -1,19 +1,25 @@
 services:
   config-service:
     build: .
-    command: uv run --with fastapi -- fastapi dev services/config-server/app/main.py --host 0.0.0.0 --port 8000
+    command: uv run --package config-server --with fastapi -- fastapi dev services/config-server/app/main.py --host 0.0.0.0 --port 8000
     volumes:
       - ./services/config-server:/app/services/config-server
     ports:
       - "8003:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
 
   gateway-service:
     build: .
     command: uv run --package gateway --with fastapi -- fastapi dev services/gateway/app/main.py --host 0.0.0.0 --port 8000
     depends_on:
-      - config-service
-      - weather-data-service
-      - flow-data-service
+      config-service:
+        condition: service_healthy
+      # weather-data-service:
+      # flow-data-service:
     ports:
       - "8000:8000"
     volumes:
@@ -23,7 +29,8 @@ services:
     build: .
     command: uv run --package weather-data --with fastapi -- fastapi dev services/weather-data/app/main.py --host 0.0.0.0 --port 8000
     depends_on:
-      - config-service
+      config-service:
+        condition: service_healthy
     ports:
       - "8001:8000"
     volumes:
@@ -33,7 +40,8 @@ services:
     build: .
     command: uv run --package flow-data --with fastapi -- fastapi dev services/flow-data/app/main.py --host 0.0.0.0 --port 8000
     depends_on:
-      - config-service
+      config-service:
+        condition: service_healthy
     ports:
       - "8002:8000"
     volumes:
