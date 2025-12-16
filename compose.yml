@@ -35,6 +35,7 @@ services:
       - "8001:8000"
     volumes:
       - ./services/weather-data:/app/services/weather-data
+      - ./models/comephores/data:/app/services/weather-data/comephores
 
   flow-data-service:
     build: .
