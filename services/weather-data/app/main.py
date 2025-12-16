@@ -1,30 +1,22 @@
-from datetime import datetime
 from typing import Annotated
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import FileResponse
-<<<<<<< HEAD
-from datetime import datetime, timedelta
-from app.fetch import fetch_rainfall_local, UnavailableData
-from app.dependencies.config import Config
-||||||| parent of 433c495 (Add availability endpoint and pydantic data model)
-from datetime import datetime, timedelta
-from app.fetch import fetch_rainfall_local, UnavailableData
-=======
 
-from app.fetch import UnavailableData, fetch_rainfall_local, fetch_rainfall_availability_local
+from app.dependencies.config import Config
+from app.fetch import (
+    UnavailableData,
+    fetch_rainfall_availability_local,
+    fetch_rainfall_local,
+)
 from app.models import AvailabilityPeriod
->>>>>>> 433c495 (Add availability endpoint and pydantic data model)
 
 app = FastAPI()
 
 
 @app.get("/")
-async def root():
-    return {
-        "message": "Hello from weather-data service!",
-        "config": config
-    }
+async def root(config: Config):
+    return {"message": "Hello from weather-data service!", "config": config}
 
 
 @app.get("/availability", response_model=list[AvailabilityPeriod])
