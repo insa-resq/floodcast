@@ -3,18 +3,11 @@ from typing import Annotated
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import FileResponse
-<<<<<<< HEAD
 from datetime import datetime, timedelta
-from app.fetch import fetch_rainfall_local, UnavailableData
 from app.dependencies.config import Config
-||||||| parent of 433c495 (Add availability endpoint and pydantic data model)
-from datetime import datetime, timedelta
-from app.fetch import fetch_rainfall_local, UnavailableData
-=======
 
 from app.fetch import UnavailableData, fetch_rainfall_local, fetch_rainfall_availability_local
 from app.models import AvailabilityPeriod
->>>>>>> 433c495 (Add availability endpoint and pydantic data model)
 
 app = FastAPI()
 
