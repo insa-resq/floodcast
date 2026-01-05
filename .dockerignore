@@ -1,3 +1,6 @@
 .python-version
 __pycache__
 .venv
+*.tar
+.git
+models/**/data
