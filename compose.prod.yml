@@ -1,17 +1,57 @@
+version: "3.9"
+
 services:
-  weather-data-service:
-    build: .
+  config-service:
+    image: floodcast/floodcast:latest
+    container_name: floodcast-config
+    command: >
+      uv run --package config-server --with fastapi --
+      fastapi run services/config-server/app/main.py
+      --host 0.0.0.0 --port 8000
     environment:
-      SERVICE_NAME: weather-data
-  flow-data-service:
-    build: .
-    environment:
-      SERVICE_NAME: flow-data
-    depends_on: [weather-data-service]
+      SERVICE_NAME: config-server
+    ports:
+      - "8003:8000"
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   gateway-service:
-    build: .
+    image: floodcast/floodcast:latest
+    container_name: floodcast-gateway
+    command: >
+      uv run --package gateway --with fastapi --
+      fastapi run services/gateway/app/main.py
+      --host 0.0.0.0 --port 8000
     environment:
       SERVICE_NAME: gateway
-    depends_on: [weather-data-service, flow-data-service]
     ports:
       - "8000:8000"
+    restart: always
+    depends_on:
+      config-service:
+        condition: service_healthy
+
+  weather-data-service:
+    image: floodcast/floodcast:latest
+    container_name: floodcast-weather
+    command: >
+      uv run --package weather-data --with fastapi --
+      fastapi run services/weather-data/app/main.py
+      --host 0.0.0.0 --port 8000
+    environment:
+      SERVICE_NAME: weather-data
+    ports:
+      - "8001:8000"
+    restart: always
+    depends_on:
+      config-service:
+        condition: service_healthy
+
+networks:
+  default:
+    name: floodcast-network
+
