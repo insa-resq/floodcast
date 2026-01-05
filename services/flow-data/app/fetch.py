@@ -43,21 +43,14 @@ async def locate_nearest_station(query: SiteQueryParams) -> SiteInfo | None:
 
 
 class FlowQueryParams(BaseModel):
-    site_query: SiteQueryParams
+    latitude: float
+    longitude: float
+    max_distance: int = Field(serialization_alias="distance")
     # site_code: str = Field(serialization_alias="code_entite")
     start_date: date | None = Field(
         default=None, serialization_alias="date_debut_obs_elab"
     )
     end_date: date | None = Field(default=None, serialization_alias="date_fin_obs_elab")
-
-    @model_serializer(mode="wrap")
-    def serialize(self, handler):
-        data = handler(self)
-        site_query = data.pop("site_query")
-        return {
-            **data,
-            **site_query,  # flatten
-        }
 
 
 class FlowInfo(BaseModel):
@@ -76,6 +69,8 @@ class FlowInfo(BaseModel):
             data["measure"] = measure_raw[0]
             if data["measure"] == "Q":
                 data["resultat_obs_elab"] /= 60
+            else:
+                data["resultat_obs_elab"] /= 100
             if "ix" in measure_raw.lower():
                 data["measure_type"] = "max"
             elif "in" in measure_raw.lower():
@@ -134,12 +129,12 @@ if __name__ == "__main__":
     async def test():
         flows = await fetch_flows(
             FlowQueryParams(
-                site_query=SiteQueryParams(
-                    latitude=43.604652, longitude=1.444209, max_distance=10
-                ),
+                latitude=43.604652,
+                longitude=1.444209,
+                max_distance=10,
                 start_date=date(year=2026, month=1, day=1),
             )
         )
-        print(latest_measure(flows, measure="Q", measure_type="min", span="daily"))
+        print(latest_measure(flows, measure="H", measure_type="max", span="daily"))
 
     asyncio.run(test())
