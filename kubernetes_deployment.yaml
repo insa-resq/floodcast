@@ -1,4 +1,19 @@
 ---
+# Service: config-service
+apiVersion: v1
+kind: Service
+metadata:
+  name: config-service
+spec:
+  selector:
+    app: config-service
+  ports:
+    - name: local-port
+      port: 8000
+      targetPort: 8000
+      protocol: TCP
+
+---
 # Deployment: config-service
 apiVersion: apps/v1
 kind: Deployment
@@ -23,6 +38,21 @@ spec:
           value: "config-server"
         ports:
         - containerPort: 8000
+
+---
+# Service: flow-data-service
+apiVersion: v1
+kind: Service
+metadata:
+  name: flow-data-service
+spec:
+  selector:
+    app: flow-data-service
+  ports:
+    - name: local-port
+      port: 8000
+      targetPort: 8000
+      protocol: TCP
 
 ---
 # Deployment: flow-data-service
@@ -51,6 +81,21 @@ spec:
         - containerPort: 8000
 
 ---
+# Service: gateway-service
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway-service
+spec:
+  selector:
+    app: gateway-service
+  ports:
+    - name: local-port
+      port: 8000
+      targetPort: 8000
+      protocol: TCP
+
+---
 # Deployment: gateway-service
 apiVersion: apps/v1
 kind: Deployment
@@ -75,6 +120,21 @@ spec:
           value: "gateway"
         ports:
         - containerPort: 8000
+
+---
+# Service: weather-data-service
+apiVersion: v1
+kind: Service
+metadata:
+  name: weather-data-service
+spec:
+  selector:
+    app: weather-data-service
+  ports:
+    - name: local-port
+      port: 8000
+      targetPort: 8000
+      protocol: TCP
 
 ---
 # Deployment: weather-data-service
