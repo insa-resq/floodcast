@@ -8,6 +8,7 @@ from pydantic import BaseModel
 
 class ConfigModel(BaseModel):
     log_level: Literal["debug"]
+    db_url: str
 
 
 @alru_cache(maxsize=32)

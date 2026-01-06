@@ -1,1 +1,2 @@
 log_level: "debug"
+db_url: "sqlite://"
