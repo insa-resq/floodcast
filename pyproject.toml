@@ -14,6 +14,7 @@ members = [
     "services/gateway",
     "services/config-server",
     "services/alert",
+    "services/dashboard",
 ]
 
 [tool.ty.environment]
@@ -23,4 +24,5 @@ root = [
     "services/gateway/",
     "services/config-server/",
     "services/alert/",
+    "services/dashboard/",
 ]
