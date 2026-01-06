@@ -46,3 +46,14 @@ services:
       - "8002:8000"
     volumes:
       - ./services/flow-data:/app/services/flow-data
+
+  flood-prediction-service:
+    build: .
+    command: uv run --package flood-prediction --with fastapi -- fastapi dev services/flood-prediction/app/main.py --host 0.0.0.0 --port 8000
+    depends_on:
+      config-service:
+        condition: service_healthy
+    ports:
+      - "8005:8000"
+    volumes:
+      - ./services/flood-prediction:/app/services/flood-prediction

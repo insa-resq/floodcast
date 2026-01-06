@@ -13,6 +13,7 @@ members = [
     "services/flow-data",
     "services/gateway",
     "services/config-server",
+    "services/flood-prediction",
 ]
 
 [tool.ty.environment]
@@ -21,5 +22,5 @@ root = [
     "services/flow-data/",
     "services/gateway/",
     "services/config-server/",
+    "services/flood-prediction/",
 ]
-
