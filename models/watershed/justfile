@@ -1,0 +1,64 @@
+alti_db_url := "https://geoservices.ign.fr/bdalti"
+alti_base_url := "https://data.geopf.fr/telechargement/download/BDALTI"
+
+# Download 25m elevation model for departement (e.g. 031)
+download departement_number:
+    #!/usr/bin/env bash
+    set -euxo pipefail
+    folder_name_pattern="BDALTIV2_2-0_25M_ASC_LAMB93-IGN69_D{{ departement_number }}_.\{10\}"
+    # echo $folder_name_pattern
+    # echo {{ alti_base_url }}/$folder_name_pattern/$folder_name_pattern\.7z
+    curl -fsSL {{ alti_db_url }}\
+    | grep -o {{ alti_base_url }}/$folder_name_pattern/$folder_name_pattern\.7z\
+    | head -n1\
+    | xargs curl -fL -o data/dem-dep-{{ departement_number }}.7z
+
+# Extract and convert elevation model for departement (e.g. 031)
+process departement_number:
+    7z x data/dem-dep-{{ departement_number }}.7z -y -odata/dem-dep-{{ departement_number }}
+    mv data/dem-dep-{{ departement_number }}/*/*/1*/*/* data/dem-dep-{{ departement_number }}
+    @just convert data/dem-dep-{{ departement_number }}/*.asc
+    # rm -f data/dem-dep-{{ departement_number }}.7z
+    rm -rf data/dem-dep-{{ departement_number }}/BDALTIV2*/
+    rm -rf data/dem-dep-{{ departement_number }}/*.asc*
+
+# Convert files from asc to tiff, while also replacing 0 elevation with nan and fixing coordinate system
+_convert +files:
+    #!/usr/bin/env bash
+    set -euxo pipefail
+    for file in {{ files }}; do
+        gdal_translate -of GTiff "$file" "${file%.asc}.tiff"
+        gdal_edit -a_srs EPSG:2154 "${file%.asc}.tiff"
+        gdal_calc -A "${file%.asc}.tiff" --outfile="${file%.asc}.tiff" --calc="numpy.where(A==0, numpy.nan, A)" --overwrite
+    done
+
+# Merge tiff files into a single tiff file
+merge out +files:
+    ls -1 {{ files }} > input_list.txt
+    gdal_merge -ot Float32 -of GTiff -a_nodata nan -init nan -o {{ out }} --optfile input_list.txt 
+    gdal_edit -a_srs EPSG:2154 {{ out }}
+    rm -f input_list.txt
+
+# Downscale tiff to grid of size (in meters)
+downscale in out size:
+    gdalwarp -tr {{ size }} {{ size }} -r average {{ in }} {{ out }}
+
+[doc('Compute a range of information about the input DEM, including watershed delineation and downslope distance to point
+Outputs a bunch of new files, so move your file into a folder before running')]
+distance dem +points:
+    #!/usr/bin/env bash
+    dir=$(dirname -- {{ dem }})
+    whitebox_tools --run="FillDepressions" --dem={{ dem }} --output=$dir/filled.tiff --fix_flats --compress_rasters=False
+    whitebox_tools --run="D8Pointer" --dem=$dir/filled.tiff --output=$dir/directions.tiff --compress_rasters=False
+    whitebox_tools --run="D8FlowAccumulation" --input=$dir/filled.tiff --output=$dir/acc.tiff --out_type=cells --compress_rasters=False
+    whitebox_tools --run="Slope" --dem=$dir/filled.tiff --output=$dir/slope.tiff --units=degrees --compress_rasters=False
+    uv run weights.py $dir/acc.tiff $dir/slope.tiff $dir/weights.tiff
+    for point in {{ points }}; do
+        snap="${point%.*}-snap.shp"
+        basin="${point%.*}-basin.tiff"
+        dist="${point%.*}-dist.tiff"
+        echo $snap
+        whitebox_tools -r=SnapPourPoints --pour_pts=$point --flow_accum=$dir/acc.tiff -o=$snap --snap_dist=50.0 
+        whitebox_tools -r=Watershed --d8_pntr=$dir/directions.tiff --pour_pts=$snap -o=$basin
+        whitebox_tools -r=DownslopeFlowpathLength --d8_pntr=$dir/directions.tiff --watersheds=$basin --weights=$dir/weights.tiff -o=$dist
+    done
