@@ -60,3 +60,4 @@ services:
       - "8004:8000"
     volumes:
       - ./services/flow-prediction:/app/services/flow-prediction
+      - ./models/watershed/data:/app/services/flow-prediction/watershed
