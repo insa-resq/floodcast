@@ -56,6 +56,8 @@ services:
     depends_on:
       config-service:
         condition: service_healthy
+      weather-data-service:
+        condition: service_started
     ports:
       - "8004:8000"
     volumes:
