@@ -8,4 +8,6 @@ dependencies = [
     "async-lru>=2.0.5",
     "fastapi[standard]>=0.121.2",
     "httpx>=0.28.1",
+    "isodate>=0.7.2",
+    "lxml>=6.0.2",
 ]
