@@ -18,3 +18,20 @@ Production
 sudo docker compose -f compose.prod.yml up
 ```
 
+## Eco-design
+
+You should have jupyter installed to re-run the code.
+
+The code logic is in modelisation.ipynb
+
+**Source code for efootprint module** : https://github.com/Boavizta/e-footprint
+**Documentation** : https://boavizta.github.io/e-footprint/
+
+```bash
+python -m venv .venv 
+
+pip install efootprint
+
+jupyter notebook
+
+```
