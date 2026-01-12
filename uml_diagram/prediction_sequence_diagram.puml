@@ -1,0 +1,26 @@
+@startuml
+title Flood Prediction System - Prediction Sequence Diagram
+
+box "Flood Prediction System" #LightBlue
+    participant "Flood Prediction Service" as fdps
+    participant "Flow Prediction Service" as fwps
+    participant "GIS Service" as gis
+    participant "Database" as db
+end box
+
+participant "External API\n(Weather / Flow Data)" as ext
+
+fdps -> db : requestRawData()
+db -> ext : fetchExternalData()
+ext --> db : rawData
+db --> fdps : preparedData
+
+fdps -> fwps : getFlowPrediction()
+fwps --> fdps : flowPrediction
+
+loop while prediction < p 
+    fdps -> fdps : run DassFlow model
+end loop
+
+@enduml
+

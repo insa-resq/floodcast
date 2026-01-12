@@ -1,0 +1,50 @@
+@startuml
+title Flood Prediction System - Consultation Data Sequence Diagram
+
+actor User
+
+box "Flood Prediction System" #LightBlue
+    participant "Gateway" as gateway
+    participant "Inference Service" as inf
+    participant "GIS Service" as gis
+    participant "Database" as db
+end box
+
+participant "External API\n(Weather / Flow Data)" as ext
+
+
+' ============================================================
+' USER CHECKS FLOOD STATUS
+' ============================================================
+
+User -> gateway : checkFloodStatus()
+gateway -> db : getCurrentFloodStatus()
+db --> gateway : floodStatus
+gateway --> User : showFloodStatus()
+
+
+User -> gateway : GET /predictions
+gateway -> inf : GET /predictions
+inf -> db : get_all_predictions()
+db --> inf : List<Prediction>
+inf --> gateway : List<PredictionModel>
+gateway --> User : List<PredictionModel>
+
+
+User -> gateway : GET /predictions/{id}
+gateway -> inf : GET /predictions
+inf -> db : get_all_predictions()
+db --> inf : List<Prediction>
+inf --> gateway : List<PredictionModel>
+gateway --> User : PredictionModel
+
+' ============================================================
+' USER CONSULTS GIS DETAILS
+' ============================================================
+
+User -> gateway : consultFloodDetails()
+gateway -> gis : getSegmentDetails()
+gis --> gateway : segmentDetails
+gateway --> User : displaySegmentDetails()
+
+@enduml

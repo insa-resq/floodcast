@@ -1,0 +1,22 @@
+@startuml
+title Flood Prediction System - Subscribe Sequence Diagram
+
+actor User
+
+box "Flood Prediction System" #LightBlue
+    participant "Gateway" as gateway
+    participant "Alert Service" as alert
+    participant "Database" as db
+end box
+
+' ============================================================
+' USER SUBSCRIBES TO ALERTS
+' ============================================================
+
+User -> gateway : subscribeToAlerts()
+gateway -> alert : registerSubscription(user)
+alert -> db : add_user(user)
+alert --> gateway : subscriptionConfirmed
+gateway --> User : subscriptionConfirmed
+
+@enduml

@@ -1,0 +1,50 @@
+@startuml
+title Flood Prediction System - Inference Sequence Diagram
+
+actor User
+
+box "Flood Prediction System" #LightBlue
+    participant "Gateway" as gateway
+    participant "Inference Service" as inf
+    participant "Flood Prediction Service" as fps
+    participant "Alert Service" as alert
+    participant "Database" as db
+end box
+
+participant "External API\n(Weather / Flow Data)" as ext
+
+' ============================================================
+' PERIODIC FLOOD PREDICTION (Inference-driven)
+' ============================================================
+
+loop Every 1 hour
+    inf -> fps : GET /predict
+    activate fps
+        fps -> db : requestRawData()
+        db -> ext : fetchExternalData()
+        ext --> db : rawData
+        db --> fps : preparedData
+
+        fps -> fps : simulateFlood()
+        fps --> inf : Prediction
+    deactivate fps
+
+    inf -> db : add_prediction(prediction)
+    inf -> alert : POST /alert (prediction)
+    activate alert
+        alert -> db : getSubscribedUsers()
+        db --> alert : users
+
+        loop For each user
+            alert -> alert : evaluateRisk(user, floodPrediction)
+
+            alt Flood risk detected
+                alert -> User : sendFloodAlert()
+            else No significant risk
+                alert -> alert : skipNotification()
+            end
+        end
+    deactivate alert
+end loop
+
+@enduml
