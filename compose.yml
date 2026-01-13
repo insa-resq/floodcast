@@ -33,6 +33,8 @@ services:
         condition: service_healthy
     ports:
       - "8001:8000"
+    environment:
+      - METEO_FRANCE_AROME_API_KEY
     volumes:
       - ./services/weather-data:/app/services/weather-data
       - ./models/comephores/data:/app/services/weather-data/comephores
