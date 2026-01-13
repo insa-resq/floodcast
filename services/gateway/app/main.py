@@ -1,11 +1,11 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 import httpx
 import logging
 
 # from app.dependencies.config import Config
 from app.dependencies.config import Config
-from app.models import Segment, Flood, User, AvailabilityPeriod
-from datetime import datetime, timedelta
+from app.models import Segment, PredictionModel, UserModel
+from datetime import datetime
 
 app = FastAPI()
 logger = logging.getLogger("gateway")
@@ -24,8 +24,11 @@ async def root(config: Config):
         "weather": weather,
     }
 @app.post("/subscribe")
-async def subscribe(user: User) -> User:
-    return user
+async def subscribe(user: UserModel):
+    url = "http://alert-service:8000/subscribe"
+    async with httpx.AsyncClient() as client:
+        r = await client.post(url, data={"data": user})
+        r.raise_for_status()
 
 @app.get("/segments")
 async def get_segments() -> list[Segment]:
@@ -50,43 +53,23 @@ async def get_segment(id: int) -> Segment:
     return segment
 
 @app.get("/floods")
-async def get_floods() -> list[Flood]:
-    return [Flood(
-        id=1,
-        segments_ids=[1, 2],
-        severity=3,
-        probability=0.75,
-        period=AvailabilityPeriod(
-            start=datetime(2025, 9, 9, 12),
-            span=timedelta(hours=1)
-        )
-    )]
-
-@app.get("/floods/{departement}")
-async def get_floods_departement(departement: int) -> list[Flood]:
-    return [Flood(
-        id=1,
-        segments_ids=[1, 2],
-        severity=3,
-        probability=0.75,
-        period=AvailabilityPeriod(
-            start=datetime(2025, 9, 9, 12),
-            span=timedelta(hours=1)
-        )
-    )]
+async def get_floods() -> list[PredictionModel]:
+    url = "http://inference-service:8000/predictions"
+    async with httpx.AsyncClient() as client:
+        r = await client.get(url)
+        r.raise_for_status()
+        data = r.json()
+        floods = [PredictionModel(**item) for item in data]
+        return floods
 
 @app.get("/floods/{id}")
-async def get_flood(id: int) -> Flood:
-    return Flood(
-        id=id,
-        segments_ids=[1, 2],
-        severity=3,
-        probability=0.75,
-        period=AvailabilityPeriod(
-            start=datetime(2025, 9, 9, 12),
-            span=timedelta(hours=1)
-        )
-    )
+async def get_flood_by_id(id: int) -> PredictionModel:
+    url = f"http://inference-service:8000/predictions/{id}"
+    async with httpx.AsyncClient() as client:
+        r = await client.get(url)
+        r.raise_for_status()
+        data = r.json()
+        return PredictionModel(**data)
 
 @app.get("/floods/{id}/map")
 async def get_flood_map(id: int):
