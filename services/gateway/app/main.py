@@ -1,3 +1,4 @@
+from typing import List
 from fastapi import FastAPI, HTTPException
 import httpx
 import logging
@@ -5,7 +6,6 @@ import logging
 # from app.dependencies.config import Config
 from app.dependencies.config import Config
 from app.models import Segment, PredictionModel, UserModel
-from datetime import datetime
 
 app = FastAPI()
 logger = logging.getLogger("gateway")
@@ -23,15 +23,24 @@ async def root(config: Config):
         "config": config.model_dump,
         "weather": weather,
     }
-@app.post("/subscribe")
+
+
+@app.post("/subscribe", status_code=201)
 async def subscribe(user: UserModel):
     url = "http://alert-service:8000/subscribe"
-    async with httpx.AsyncClient() as client:
-        r = await client.post(url, data={"data": user})
-        r.raise_for_status()
+    try:
+        async with httpx.AsyncClient() as client:
+            r = await client.post(url, data={"data": user})
+            r.raise_for_status()
+    except httpx.HTTPError as e:
+        logger.error(f"Alert service error: {e}")
+        raise HTTPException(status_code=502, detail="Alert service unavailable")
 
-@app.get("/segments")
-async def get_segments() -> list[Segment]:
+    return {"status": "subscribed"}
+
+
+@app.get("/segments", response_model=List[Segment])
+async def get_segments():
     segment = Segment(
         id=1,
         lat_1=48,
@@ -41,8 +50,9 @@ async def get_segments() -> list[Segment]:
     )
     return [segment]
 
-@app.get("/segments/{id}")
-async def get_segment(id: int) -> Segment:
+
+@app.get("/segments/{id}", response_model=Segment)
+async def get_segment(id: int):
     segment = Segment(
         id=id,
         lat_1=48,
@@ -52,25 +62,37 @@ async def get_segment(id: int) -> Segment:
     )
     return segment
 
-@app.get("/floods")
-async def get_floods() -> list[PredictionModel]:
-    url = "http://inference-service:8000/predictions"
-    async with httpx.AsyncClient() as client:
-        r = await client.get(url)
-        r.raise_for_status()
-        data = r.json()
-        floods = [PredictionModel(**item) for item in data]
-        return floods
 
-@app.get("/floods/{id}")
-async def get_flood_by_id(id: int) -> PredictionModel:
+@app.get("/floods", response_model=List[PredictionModel])
+async def get_floods():
+    url = "http://inference-service:8000/predictions"
+    try:
+        async with httpx.AsyncClient() as client:
+            r = await client.get(url)
+            r.raise_for_status()
+            data = r.json()
+    except httpx.HTTPError as e:
+        logger.error(f"Inference service error: {e}")
+        raise HTTPException(status_code=502, detail="Inference service unavailable")
+
+    return [PredictionModel(**item) for item in data]
+
+
+@app.get("/floods/{id}", response_model=PredictionModel)
+async def get_flood_by_id(id: int):
     url = f"http://inference-service:8000/predictions/{id}"
-    async with httpx.AsyncClient() as client:
-        r = await client.get(url)
-        r.raise_for_status()
-        data = r.json()
-        return PredictionModel(**data)
+    try:
+        async with httpx.AsyncClient() as client:
+            r = await client.get(url)
+            r.raise_for_status()
+            data = r.json()
+    except httpx.HTTPError as e:
+        logger.error(f"Inference service error: {e}")
+        raise HTTPException(status_code=502, detail="Inference service unavailable")
+
+    return PredictionModel(**data)
+
 
 @app.get("/floods/{id}/map")
 async def get_flood_map(id: int):
-    return
+    raise HTTPException(status_code=501, detail="Not implemented")
