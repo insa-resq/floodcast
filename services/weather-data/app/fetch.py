@@ -1,13 +1,16 @@
 import os
 import re
+from collections.abc import AsyncIterator, Generator
 from datetime import datetime, timedelta
 from io import BytesIO
 from pathlib import Path
-from typing import AsyncIterator, Generator, Literal, Optional
+from typing import Literal, override
 
 import httpx
-import isodate
-from lxml import etree
+import isodate  # pyright: ignore[reportMissingTypeStubs]
+from lxml import (  # pyright: ignore[reportMissingTypeStubs]
+    etree,  # pyright: ignore[reportAttributeAccessIssue ]
+)
 from pydantic import BaseModel, Field, field_serializer
 
 from app.models import AvailabilityPeriod
@@ -22,8 +25,6 @@ FILE_PATTERN = "%Y%m%d%H_ERR.gtif"
 
 
 class CoverageQueryParams(BaseModel):
-    # Forecast time
-    # TODO: Serialize as subset: str = f"time({time})"
     time: datetime
     coverage_id: str = Field(serialization_alias="coverageid")
     service: Literal["WCS"] = "WCS"
@@ -31,16 +32,17 @@ class CoverageQueryParams(BaseModel):
     format: Literal["image/tiff"] = "image/tiff"
 
     @field_serializer("time")
-    def serialize_time_as_subset(self, time: datetime, _info):
+    def serialize_time_as_subset(self, time: datetime):
         """
-        Serialize `time` as a WCS subset parameter.
+        Serialize time as a WCS subset parameter.
         """
 
         return f"time({time.isoformat()}Z)"
 
-    def model_dump(self, *args, **kwargs):
+    @override
+    def model_dump(self, *args, **kwargs):  # pyright: ignore[reportUnknownParameterType, reportMissingParameterType]
         """
-        Override dump to rename `time` → `subset`
+        Override dump to rename time → subset
         """
         data = super().model_dump(*args, **kwargs)
         data["subset"] = data.pop("time")
@@ -59,49 +61,49 @@ class CapabilitiesQueryParams(BaseModel):
 
 COVERAGE_ID_PATTERN = re.compile(
     r"^TOTAL_WATER_PRECIPITATION__GROUND_OR_WATER_SURFACE___"
-    r"(?P<datetime>\d{4}-\d{2}-\d{2}T\d{2}\.\d{2}\.\d{2}Z)"
-    r"_(?P<period>.+)$"
+    + r"(?P<datetime>\d{4}-\d{2}-\d{2}T\d{2}\.\d{2}\.\d{2}Z)"
+    + r"_(?P<period>.+)$"
 )
 
 
-async def fetch_availability() -> AsyncIterator[tuple[str, datetime, timedelta]]:
+# pyright: reportUnknownVariableType=false, reportUnknownMemberType=false
+async def fetch_coverage_ids() -> AsyncIterator[tuple[str, datetime, timedelta]]:
     """
-    Iterates over CoverageIds matching TOTAL_WATER_PRECIPITATION pattern.
+    Calls GET /GetCapabilities, fetches all coverage_ids matching TOTAL_WATER_PRECIPITATION pattern.
+    Extracts the time at which the forecast was made and the accumulation period.
 
     Yields:
         (coverage_id, datetime, period)
     """
-    async with httpx.AsyncClient(timeout=None) as client:
-        async with httpx.AsyncClient(timeout=60) as client:
-            response = await client.get(
-                BASE_URL + "/GetCapabilities",
-                params=CapabilitiesQueryParams().model_dump(),
-                headers={"apikey": METEO_FRANCE_AROME_API_KEY},
-            )
-            response.raise_for_status()
+    async with httpx.AsyncClient(timeout=60) as client:
+        response = await client.get(
+            BASE_URL + "/GetCapabilities",
+            params=CapabilitiesQueryParams().model_dump(),
+            headers={"apikey": METEO_FRANCE_AROME_API_KEY},
+        )
+        _ = response.raise_for_status()
 
-            # Load the entire XML into memory
-            xml_root = etree.fromstring(response.content)
+        # Load the entire XML into memory
+        xml_root = etree.fromstring(response.content)
+        # Iterate over all CoverageId elements
+        for coverage_elem in xml_root.xpath(
+            ".//wcs:CoverageId",
+            namespaces={"wcs": "http://www.opengis.net/wcs/2.0"},
+        ):
+            coverage_id = coverage_elem.text.strip()
 
-            # Iterate over all CoverageId elements
-            for coverage_elem in xml_root.xpath(
-                ".//wcs:CoverageId",
-                namespaces={"wcs": "http://www.opengis.net/wcs/2.0"},
-            ):
-                coverage_id = coverage_elem.text.strip()
+            match = COVERAGE_ID_PATTERN.match(coverage_id)  # pyright: ignore[reportUnknownArgumentType]
+            if match:
+                dt_raw = match.group("datetime")
+                period_str = match.group("period")
 
-                match = COVERAGE_ID_PATTERN.match(coverage_id)
-                if match:
-                    dt_raw = match.group("datetime")
-                    period_str = match.group("period")
+                # Convert datetime
+                dt = datetime.strptime(dt_raw, "%Y-%m-%dT%H.%M.%SZ")
 
-                    # Convert datetime
-                    dt = datetime.strptime(dt_raw, "%Y-%m-%dT%H.%M.%SZ")
+                # Parse ISO-8601 duration
+                duration = isodate.parse_duration(period_str)
 
-                    # Parse ISO-8601 duration
-                    duration = isodate.parse_duration(period_str)
-
-                    yield coverage_id, dt, duration
+                yield coverage_id, dt, duration
 
 
 def fetch_rainfall_availability_local() -> Generator[AvailabilityPeriod]:
@@ -118,7 +120,7 @@ def fetch_rainfall_availability_local() -> Generator[AvailabilityPeriod]:
 def select_best_coverage_id(
     period: AvailabilityPeriod,
     coverage_list: list[tuple[str, datetime, timedelta]],
-) -> Optional[str]:
+) -> str | None:
     """
     Given a target period, select the best coverageId.
     coverage_list: list of tuples (coverage_id, dt, period)
@@ -126,7 +128,12 @@ def select_best_coverage_id(
     valid_coverages = [
         c
         for c in coverage_list
-        if c[1] <= period.start - timedelta(hours=1) and c[2] == period.span
+        if c[1]
+        <= period.start
+        - timedelta(
+            hours=1,
+        )
+        and c[2] == period.span
     ]
 
     if valid_coverages:
@@ -144,7 +151,7 @@ async def fetch_rainfall(period: AvailabilityPeriod) -> BytesIO:
     # Otherwise, use the latest coverageID
 
     #  Build list of all available TOTAL_WATER_PRECIPITATION coverageIds
-    coverage_list = [(cid, dt, span) async for cid, dt, span in fetch_availability()]
+    coverage_list = [(cid, dt, span) async for cid, dt, span in fetch_coverage_ids()]
 
     if not coverage_list:
         raise ValueError("No matching coverageIds found in the capabilities XML.")
@@ -165,7 +172,7 @@ async def fetch_rainfall(period: AvailabilityPeriod) -> BytesIO:
             params=params.model_dump(by_alias=True),
             headers={"apikey": METEO_FRANCE_AROME_API_KEY},
         )
-        response.raise_for_status()
+        _ = response.raise_for_status()
 
         return BytesIO(response.content)
 
@@ -189,8 +196,7 @@ if __name__ == "__main__":
                 span=timedelta(hours=1),
             )
         )
-        # Write the stuff
         with open("output.tiff", "wb") as f:
-            f.write(bytes.getbuffer())
+            _ = f.write(bytes.getbuffer())
 
     asyncio.run(test())

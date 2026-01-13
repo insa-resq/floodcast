@@ -1,11 +1,12 @@
 from typing import Annotated
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Response
 from fastapi.responses import FileResponse
 
 from app.dependencies.config import Config
 from app.fetch import (
     UnavailableData,
+    fetch_rainfall,
     fetch_rainfall_availability_local,
     fetch_rainfall_local,
 )
@@ -19,8 +20,8 @@ async def root(config: Config):
     return {"message": "Hello from weather-data service!", "config": config}
 
 
-@app.get("/availability", response_model=list[AvailabilityPeriod])
-async def get_availability():
+@app.get("/availability/local", response_model=list[AvailabilityPeriod])
+async def get_availability_local():
     """
     Get the list of available rainfall periods.
     """
@@ -29,7 +30,6 @@ async def get_availability():
 
 @app.get(
     "/rainfall",
-    response_class=FileResponse,
     responses={
         200: {
             "content": {"image/tiff": {}},
@@ -44,6 +44,35 @@ async def get_availability():
     },
 )
 async def get_rainfall(availability: Annotated[AvailabilityPeriod, Query()]):
+    """
+    Get a TIFF format rainfall map. Unit: ??.
+
+    Currently only accepts past dates if downloaded and a one hour span (using comephores).
+    """
+    bytes = await fetch_rainfall(availability)
+    return Response(bytes.read(), media_type="image/tiff")
+
+    # except:  # noqa: E722
+    #     return HTTPException(status_code=404, detail="No data for this period or span.")
+
+
+@app.get(
+    "/rainfall/local",
+    response_class=FileResponse,
+    responses={
+        200: {
+            "content": {"image/tiff": {}},
+            "description": "TIFF file returned successfully",
+        },
+        404: {
+            "description": "File not found",
+        },
+        500: {
+            "description": "Server error while generating file",
+        },
+    },
+)
+async def get_rainfall_local(availability: Annotated[AvailabilityPeriod, Query()]):
     """
     Get a TIFF format rainfall map. Unit: ??.
 
