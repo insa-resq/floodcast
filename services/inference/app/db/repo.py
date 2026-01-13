@@ -16,3 +16,7 @@ class DB:
     def get_all_predictions(self) -> list[Prediction]:
         with self.session.begin() as session:
             return session.scalars(select(Prediction)).all()
+        
+    def get_prediction_by_id(self) -> Prediction:
+        with self.session.begin() as session:
+            return session.scalars(select(Prediction).where(Prediction.id == id))

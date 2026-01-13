@@ -2,7 +2,7 @@ import asyncio
 from contextlib import asynccontextmanager
 from datetime import datetime
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from httpx import AsyncClient
 
 from app.db.models import Prediction
@@ -22,7 +22,7 @@ async def fetch_prediction() -> Prediction:
 
 
 async def send_alert(prediction: Prediction):
-    url = "http://alert-service:8000/?"
+    url = "http://alert-service:8000/alertUsers"
     async with AsyncClient() as client:
         r = await client.post(url, data={"data": prediction})
         r.raise_for_status()
@@ -66,6 +66,12 @@ async def root(config: Config):
 def get_predictions(db: DBDependency) -> list[PredictionModel]:
     return list(map(PredictionModel.model_validate, db.get_all_predictions()))
 
+@app.get("/predictions/{id}")
+def get_predictions(db: DBDependency) -> PredictionModel:
+    prediction = db.get_prediction_by_id(id)
+    if prediction is None:
+        raise HTTPException(status_code=404, detail="Prediction not found")
+    return PredictionModel.model_validate(prediction)
 
 @app.post("/test")
 def add_test_prediction(db: DBDependency):
