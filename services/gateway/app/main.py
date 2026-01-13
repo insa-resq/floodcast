@@ -71,8 +71,18 @@ async def get_floods():
             r = await client.get(url)
             r.raise_for_status()
             data = r.json()
-    except httpx.HTTPError as e:
-        logger.error(f"Inference service error: {e}")
+    except httpx.HTTPStatusError as e:
+        status = e.response.status_code
+        text = e.response.text
+        logger.error(f"Inference service returned {status}: {text}")
+
+        if status == 404:
+            raise HTTPException(status_code=404, detail="Predictions not found")
+        else:
+            raise HTTPException(status_code=502, detail="Inference service error")
+
+    except httpx.RequestError as e:
+        logger.error(f"Inference service unavailable: {e}")
         raise HTTPException(status_code=502, detail="Inference service unavailable")
 
     return [PredictionModel(**item) for item in data]
@@ -86,8 +96,18 @@ async def get_flood_by_id(id: int):
             r = await client.get(url)
             r.raise_for_status()
             data = r.json()
-    except httpx.HTTPError as e:
-        logger.error(f"Inference service error: {e}")
+    except httpx.HTTPStatusError as e:
+        status = e.response.status_code
+        text = e.response.text
+        logger.error(f"Inference service returned {status}: {text}")
+
+        if status == 404:
+            raise HTTPException(status_code=404, detail="Prediction not found")
+        else:
+            raise HTTPException(status_code=502, detail="Inference service error")
+
+    except httpx.RequestError as e:
+        logger.error(f"Inference service unavailable: {e}")
         raise HTTPException(status_code=502, detail="Inference service unavailable")
 
     return PredictionModel(**data)
