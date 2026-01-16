@@ -6,7 +6,7 @@ from app.dependencies.db import DBDependency
 from app.db.models import User
 from app.models.user import UserModel
 from app.models.prediction import PredictionModel
-
+import httpx
 app = FastAPI()
 
 
@@ -18,8 +18,33 @@ def mailto(email: str, prediction: PredictionModel):
     print(f"[MAIL] Alerte envoyée à {email} : {prediction}")
 
 
-def send_to_ip(ip: str, prediction: PredictionModel):
-    print(f"[IP] Alerte envoyée à {ip} : {prediction}")
+
+
+
+async def send_to_ip(ip: str, prediction: PredictionModel):
+    """
+    Send alert to a remote service identified by its IP.
+    """
+    url = f"http://{ip}:8000/alert"
+
+    payload = prediction.model_dump()
+
+    try:
+        async with httpx.AsyncClient(timeout=3.0) as client:
+            response = await client.post(url, json=payload)
+            response.raise_for_status()
+
+        print(f"[IP] Alerte envoyée à {ip}")
+
+    except httpx.RequestError as e:
+        print(f"[IP][ERROR] Impossible de joindre {ip}: {e}")
+
+    except httpx.HTTPStatusError as e:
+        print(
+            f"[IP][ERROR] {ip} a répondu {e.response.status_code} "
+            f"- {e.response.text}"
+        )
+
 
 
 # --------------------------------------------------
