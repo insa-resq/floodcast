@@ -49,3 +49,14 @@ services:
       - "8002:8000"
     volumes:
       - ./services/flow-data:/app/services/flow-data
+
+  alert-service:
+    build: .
+    command: uv run --package alert --with fastapi -- fastapi dev services/alert/app/main.py --host 0.0.0.0 --port 8000
+    depends_on:
+      config-service:
+        condition: service_healthy
+    ports:
+      - "8007:8000"
+    volumes:
+      - ./services/alert:/app/services/alert
