@@ -1,0 +1,57 @@
+@startuml
+title Flood Prediction System - Microservices Architecture Diagram
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+
+actor User
+
+package "Flood Prediction System" {
+
+    [API Gateway] as gateway
+    [Inference Service] as inf
+    [Flood Prediction Service] as fps
+    [Flow Prediction Service] as fwps
+    [Alert Service] as alert
+    [Weather Data Service] as wds
+    [Flow Data Service] as fds
+    [Database] as db
+}
+
+[External Weather & Flow APIs] as ext
+
+' =========================
+' User interactions
+' =========================
+User --> gateway : HTTP Requests\n(check status,\npredictions,\nsubscriptions)
+
+' =========================
+' Gateway routing
+' =========================
+gateway --> inf : Prediction request
+gateway --> alert : Subscription requests
+
+' =========================
+' Inference & Prediction
+' =========================
+inf --> fps : Trigger prediction
+fps --> fwps : Flow prediction
+inf --> db : Read/Write data
+
+' =========================
+' Data layer
+' =========================
+fwps --> fds : Fetch  flow data
+fwps --> wds : Fetch weather data
+
+wds --> ext : Fetch weather data
+fds --> ext : Fetch flow data
+' =========================
+' Alerts
+' =========================
+inf --> alert : Prediction results
+alert --> db : Users & subscriptions
+alert --> User : Flood alerts (Email / Push)
+
+
+@enduml
