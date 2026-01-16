@@ -17,20 +17,6 @@ participant "External API\n(Weather / Flow Data)" as ext
 ' USER CHECKS FLOOD STATUS
 ' ============================================================
 
-User -> gateway : checkFloodStatus()
-gateway -> db : getCurrentFloodStatus()
-db --> gateway : floodStatus
-gateway --> User : showFloodStatus()
-
-
-User -> gateway : GET /predictions
-gateway -> inf : GET /predictions
-inf -> db : get_all_predictions()
-db --> inf : List<Prediction>
-inf --> gateway : List<PredictionModel>
-gateway --> User : List<PredictionModel>
-
-
 User -> gateway : GET /predictions/{id}
 gateway -> inf : GET /predictions
 inf -> db : get_all_predictions()

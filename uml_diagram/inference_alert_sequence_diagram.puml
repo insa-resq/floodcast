@@ -30,10 +30,31 @@ loop Every 1 hour
     deactivate fps
 
     inf -> db : add_prediction(prediction)
-        inf -> alert : POST /alertUsers (Prediction)
-        activate alert
-        alert -> alert :alert_users(Prediction)
-        alert --> inf : status
+    inf -> alert : POST /alertUsers (Prediction)
+    activate alert
+
+    alt prediction.severity < CRUE_SEVERITY_THRESHOLD
+        alert --> inf : 200 No alert (severity too low)
+    else prediction.severity >= CRUE_SEVERITY_THRESHOLD
+        alert -> db : get_all_users()
+        db --> alert : users
+
+        alt users is empty
+            alert --> inf : 404 No users to alert
+        else users exist
+            loop For each user
+                alt user.mail exists
+                    alert -> User : send email alert
+                end
+                alt user.ip exists
+                    alert -> User : send IP alert
+                end
+            end
+
+            alert --> inf : 200 Alert sent
+        end
+    end
+
     deactivate alert
 
 end loop

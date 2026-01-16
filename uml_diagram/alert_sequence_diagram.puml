@@ -1,0 +1,44 @@
+@startuml
+title Flood Prediction System - Inference Sequence Diagram
+
+actor User
+
+box "Flood Prediction System" #LightBlue
+    participant "Inference Service" as inf
+    participant "Flood Prediction Service" as fps
+    participant "Alert Service" as alert
+    participant "Database" as db
+end box
+
+' ============================================================
+' PERIODIC FLOOD PREDICTION (Inference-driven)
+' ============================================================
+
+    inf -> alert : POST /alertUsers (Prediction)
+    activate alert
+
+    alt prediction.severity < CRUE_SEVERITY_THRESHOLD
+        alert --> inf : 200 No alert (severity too low)
+    else prediction.severity >= CRUE_SEVERITY_THRESHOLD
+        alert -> db : get_all_users()
+        db --> alert : users
+
+        alt users is empty
+            alert --> inf : 404 No users to alert
+        else users exist
+            loop For each user
+                alt user.mail exists
+                    alert -> User : send email alert
+                end
+                alt user.ip exists
+                    alert -> User : send IP alert
+                end
+            end
+
+            alert --> inf : 200 Alert sent
+        end
+    end
+
+    deactivate alert
+
+@enduml

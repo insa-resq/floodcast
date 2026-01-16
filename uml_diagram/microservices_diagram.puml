@@ -15,7 +15,6 @@ package "Flood Prediction System" {
     [Alert Service] as alert
     [Weather Data Service] as wds
     [Flow Data Service] as fds
-    [Database] as db
 }
 
 [External Weather & Flow APIs] as ext
@@ -36,7 +35,6 @@ gateway --> alert : Subscription requests
 ' =========================
 inf --> fps : Trigger prediction
 fps --> fwps : Flow prediction
-inf --> db : Read/Write data
 
 ' =========================
 ' Data layer
@@ -50,7 +48,6 @@ fds --> ext : Fetch flow data
 ' Alerts
 ' =========================
 inf --> alert : Prediction results
-alert --> db : Users & subscriptions
 alert --> User : Flood alerts (Email / Push)
 
 

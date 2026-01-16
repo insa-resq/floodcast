@@ -4,7 +4,7 @@ title Flood Prediction System - Subscribe Sequence Diagram
 actor User
 
 box "Flood Prediction System" #LightBlue
-    participant "Gateway" as gateway
+    participant "API Gateway" as gateway
     participant "Alert Service" as alert
     participant "Database" as db
 end box
@@ -13,10 +13,14 @@ end box
 ' USER SUBSCRIBES TO ALERTS
 ' ============================================================
 
-User -> gateway : subscribeToAlerts()
-gateway -> alert : registerSubscription(user)
+User -> gateway : POST /subscribe (user)
+activate gateway
+gateway -> alert : POST /subscribe (user)
+activate alert
 alert -> db : add_user(user)
-alert --> gateway : subscriptionConfirmed
-gateway --> User : subscriptionConfirmed
+alert --> gateway : 201 {"status":"subscribed"}
+deactivate alert
+gateway --> User : 201 {"status":"subscribed"}
+deactivate gateway
 
 @enduml
