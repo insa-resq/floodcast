@@ -1,39 +1,43 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from typing import List
+import httpx
 
 from app.dependencies.config import Config
 from app.dependencies.db import DBDependency
 from app.db.models import User
 from app.models.user import UserModel
 from app.models.prediction import PredictionModel
-import httpx
+
 app = FastAPI()
 
+# ✅ CORS (OBLIGATOIRE POUR LE FRONT)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",  # React (Vite)
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # --------------------------------------------------
-# Utils (mock alerting functions)
+# Utils
 # --------------------------------------------------
 
 def mailto(email: str, prediction: PredictionModel):
     print(f"[MAIL] Alerte envoyée à {email} : {prediction}")
 
 
-
-
-
 async def send_to_ip(ip: str, prediction: PredictionModel):
-    """
-    Send alert to a remote service identified by its IP.
-    """
     url = f"http://{ip}:8000/alert"
-
     payload = prediction.model_dump()
 
     try:
         async with httpx.AsyncClient(timeout=3.0) as client:
             response = await client.post(url, json=payload)
             response.raise_for_status()
-
         print(f"[IP] Alerte envoyée à {ip}")
 
     except httpx.RequestError as e:
@@ -44,7 +48,6 @@ async def send_to_ip(ip: str, prediction: PredictionModel):
             f"[IP][ERROR] {ip} a répondu {e.response.status_code} "
             f"- {e.response.text}"
         )
-
 
 
 # --------------------------------------------------
@@ -71,13 +74,10 @@ def subscribe_user(user: UserModel, db: DBDependency):
 
 
 @app.post("/alertUsers")
-def alert_users(
+async def alert_users(
     prediction: PredictionModel,
     db: DBDependency,
 ):
-    """
-    Envoie une alerte si la prédiction correspond à une crue
-    """
     CRUE_SEVERITY_THRESHOLD = 0.7
 
     if prediction.severity < CRUE_SEVERITY_THRESHOLD:
@@ -92,7 +92,7 @@ def alert_users(
         if user.mail:
             mailto(user.mail, prediction)
         if user.ip:
-            send_to_ip(user.ip, prediction)
+            await send_to_ip(user.ip, prediction)
 
     return {
         "status": "alert sent",
