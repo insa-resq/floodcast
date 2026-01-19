@@ -3,10 +3,10 @@ from typing import Annotated
 from fastapi import FastAPI, HTTPException, Query, Response
 from fastapi.responses import FileResponse
 
+from app.cache import fetch_rainfall_cached
 from app.dependencies.config import Config
 from app.fetch import (
     UnavailableData,
-    fetch_rainfall,
     fetch_rainfall_availability_local,
     fetch_rainfall_local,
 )
@@ -49,8 +49,8 @@ async def get_rainfall(availability: Annotated[AvailabilityPeriod, Query()]):
 
     Currently only accepts past dates if downloaded and a one hour span (using comephores).
     """
-    bytes = await fetch_rainfall(availability)
-    return Response(bytes.read(), media_type="image/tiff")
+    bytes = await fetch_rainfall_cached(availability)
+    return Response(bytes, media_type="image/tiff")
 
     # except:  # noqa: E722
     #     return HTTPException(status_code=404, detail="No data for this period or span.")

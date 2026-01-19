@@ -1,6 +1,7 @@
-from pydantic import BaseModel, AfterValidator, Field
 from datetime import datetime, timedelta
-from typing import Annotated
+from typing import Annotated, override
+
+from pydantic import AfterValidator, BaseModel, Field
 
 
 def validate_hour_datetime(v: datetime) -> datetime:
@@ -21,7 +22,7 @@ def validate_hour_timedelta(v: timedelta) -> timedelta:
 HourDelta = Annotated[timedelta, AfterValidator(validate_hour_timedelta)]
 
 
-class AvailabilityPeriod(BaseModel):
+class AvailabilityPeriod(BaseModel, frozen=True):
     start: HourDatetime = Field(
         title="A datetime with one hour resolution.",
         examples=[datetime(2025, 9, 9, 12)],
