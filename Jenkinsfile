@@ -16,7 +16,7 @@ pipeline {
       steps {
         checkout([
           $class: 'GitSCM',
-          branches: [[name: 'deployment']],
+          branches: [[name: 'main']],
           userRemoteConfigs: [[url: env.GIT_REPO]]
         ])
 
