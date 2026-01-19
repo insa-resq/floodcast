@@ -30,7 +30,7 @@ async def subscribe(user: UserModel):
     url = "http://alert-service:8000/subscribe"
     try:
         async with httpx.AsyncClient() as client:
-            r = await client.post(url, data={"data": user})
+            r = await client.post(url, json=user.model_dump())
             r.raise_for_status()
     except httpx.HTTPError as e:
         logger.error(f"Alert service error: {e}")
