@@ -1,6 +1,15 @@
 alti_db_url := "https://geoservices.ign.fr/bdalti"
 alti_base_url := "https://data.geopf.fr/telechargement/download/BDALTI"
 
+garonne:
+    mkdir -p data/031
+    cp outlets/* data/031
+    just download 031
+    just process 031
+    just merge data/031/dem.tiff data/dem-dep-031/*
+    rm -rf data/dem-dep-031
+    just distance data/031/dem.tiff data/031/portet.shp
+
 # Download 25m elevation model for departement (e.g. 031)
 download departement_number:
     #!/usr/bin/env bash
@@ -17,7 +26,7 @@ download departement_number:
 process departement_number:
     7z x data/dem-dep-{{ departement_number }}.7z -y -odata/dem-dep-{{ departement_number }}
     mv data/dem-dep-{{ departement_number }}/*/*/1*/*/* data/dem-dep-{{ departement_number }}
-    @just convert data/dem-dep-{{ departement_number }}/*.asc
+    @just _convert data/dem-dep-{{ departement_number }}/*.asc
     # rm -f data/dem-dep-{{ departement_number }}.7z
     rm -rf data/dem-dep-{{ departement_number }}/BDALTIV2*/
     rm -rf data/dem-dep-{{ departement_number }}/*.asc*
@@ -35,7 +44,7 @@ _convert +files:
 # Merge tiff files into a single tiff file
 merge out +files:
     ls -1 {{ files }} > input_list.txt
-    gdal_merge -ot Float32 -of GTiff -a_nodata nan -init nan -o {{ out }} --optfile input_list.txt 
+    gdal_merge -ot Float32 -of GTiff -a_nodata nan -init nan -o {{ out }} --optfile input_list.txt
     gdal_edit -a_srs EPSG:2154 {{ out }}
     rm -f input_list.txt
 
@@ -58,7 +67,7 @@ distance dem +points:
         basin="${point%.*}-basin.tiff"
         dist="${point%.*}-dist.tiff"
         echo $snap
-        whitebox_tools -r=SnapPourPoints --pour_pts=$point --flow_accum=$dir/acc.tiff -o=$snap --snap_dist=50.0 
+        whitebox_tools -r=SnapPourPoints --pour_pts=$point --flow_accum=$dir/acc.tiff -o=$snap --snap_dist=50.0
         whitebox_tools -r=Watershed --d8_pntr=$dir/directions.tiff --pour_pts=$snap -o=$basin
         whitebox_tools -r=DownslopeFlowpathLength --d8_pntr=$dir/directions.tiff --watersheds=$basin --weights=$dir/weights.tiff -o=$dist
     done

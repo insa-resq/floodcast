@@ -2,11 +2,19 @@
 
 This folder includes various tools used in the preprocessing pipeline used to transform data before usage in the final service.
 
+## Run using docker
+
+```
+docker build -t floodcast-watershed-model:latest .
+docker run --rm -v "$(pwd)/data:/app/data" floodcast-watershed-model:latest
+```
+
 ## Watershed delineation and flow distance
 
 ### Dependencies
 
 You need to install quite a lot for this to run:
+
 - [GDAL](https://gdal.org/en/stable/download.html#binaries)
   - Tooling for manipulating tiff and asc raster files.
   - Ships with [QGIS](https://qgis.org/download/), which you will probably need to view outputs.
@@ -33,6 +41,7 @@ rm -rf data/dem-dep-031
 You should now have the file data/031/dem.tiff, which is an elevation map of the whole department.
 
 You now need to specify the drainage point(s):
+
 - `qgis data/031/dem.tiff`
 - Locate your drainage point. Make sure it is on the dem layer.
 - layer => create layer => shapefile
@@ -44,6 +53,7 @@ You now need to specify the drainage point(s):
 - Right click on the layer and click save changes
 
 Now you can calculate distances, run:
+
 ```bash
 just distance-all data/031/dem.tiff data/031/points.shp
 ```
