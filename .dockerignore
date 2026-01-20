@@ -4,3 +4,5 @@ __pycache__
 *.tar
 .git
 models/**/data
+kubernetes_deployment.yaml
+./scripts/deployment/*
