@@ -14,16 +14,16 @@ export default function Subscribe() {
     const payload = {
       name: name,
       mail: email,
-      ip: "192.168.37.68", // plus tard: dynamique
+      ip: "192.168.37.68", 
     };
 
     try {
-      await axios.post("http://localhost:8007/subscribe", payload);
 
-      // 👉 redirection avec email stocké
+      const res = await axios.post("http://localhost:8007/subscribe", payload);
+      
       navigate("/map", {
         state: {
-          user: payload,
+          user: res.data.data, 
         },
       });
     } catch (err) {

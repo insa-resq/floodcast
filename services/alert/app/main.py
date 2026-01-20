@@ -11,7 +11,7 @@ from app.models.prediction import PredictionModel
 
 app = FastAPI()
 
-# ✅ CORS (OBLIGATOIRE POUR LE FRONT)
+# CORS (OBLIGATOIRE POUR LE FRONT)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -32,7 +32,7 @@ def mailto(email: str, prediction: PredictionModel):
 
 async def send_to_ip(ip: str, prediction: PredictionModel):
     url = f"http://{ip}:8000/alert"
-    payload = prediction.model_dump()
+    payload = payload = prediction.model_dump(mode="json")
 
     try:
         async with httpx.AsyncClient(timeout=3.0) as client:
@@ -70,7 +70,8 @@ def get_users(db: DBDependency):
 @app.post("/subscribe", status_code=201)
 def subscribe_user(user: UserModel, db: DBDependency):
     db.add_user(User(**user.model_dump()))
-    return {"status": "subscribed"}
+    return {"status": "subscribed",
+            "data": user}
 
 
 @app.post("/alertUsers")
