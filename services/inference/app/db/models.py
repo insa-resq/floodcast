@@ -22,7 +22,7 @@ class Prediction(Base):
 
     start_date: Mapped[datetime] = mapped_column()
 
-    end_date: Mapped[datetime] = mapped_column()
+    # end_date: Mapped[datetime] = mapped_column()
 
     def __repr__(self) -> str:
         return f"Prediction(id={self.id!r})"

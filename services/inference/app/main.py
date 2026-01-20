@@ -1,6 +1,6 @@
 import asyncio
 from contextlib import asynccontextmanager
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from fastapi import FastAPI, HTTPException
 from httpx import AsyncClient
@@ -13,12 +13,18 @@ from app.models.prediction import PredictionModel
 
 
 async def fetch_prediction() -> Prediction:
-    url = "http://flood-prediction-service:8000/?"
+    url = "http://flood-prediction-service:8000/predict/0"
+    prediction_time = datetime.now().replace(
+        minute=0, second=0, microsecond=0, tzinfo=None
+    ) + timedelta(days=1)
     async with AsyncClient() as client:
-        r = await client.get(url)
+        r = await client.get(
+            url,
+            params={"prediction_time": prediction_time.isoformat()},
+        )
         r.raise_for_status()
         data = r.json()
-        return Prediction(**data)
+        return Prediction(**data, start_date=prediction_time)
 
 
 async def send_alert(prediction: Prediction):
@@ -66,12 +72,14 @@ async def root(config: Config):
 def get_predictions(db: DBDependency) -> list[PredictionModel]:
     return list(map(PredictionModel.model_validate, db.get_all_predictions()))
 
+
 @app.get("/predictions/{id}")
-def get_predictions(db: DBDependency) -> PredictionModel:
+def get_predictions_by_id(db: DBDependency, id: int) -> PredictionModel:
     prediction = db.get_prediction_by_id(id)
     if prediction is None:
         raise HTTPException(status_code=404, detail="Prediction not found")
     return PredictionModel.model_validate(prediction)
+
 
 @app.post("/test")
 def add_test_prediction(db: DBDependency):
@@ -83,3 +91,8 @@ def add_test_prediction(db: DBDependency):
             end_date=datetime.now(),
         )
     )
+
+
+@app.post("/trigger")
+async def trigger_inference(db: DBDependency):
+    await run_inference(db)
