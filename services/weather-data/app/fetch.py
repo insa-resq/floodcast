@@ -8,6 +8,7 @@ from typing import Literal, override
 
 import httpx
 import isodate  # pyright: ignore[reportMissingTypeStubs]
+from async_lru import alru_cache
 from lxml import (  # pyright: ignore[reportMissingTypeStubs]
     etree,  # pyright: ignore[reportAttributeAccessIssue ]
 )
@@ -106,6 +107,14 @@ async def fetch_coverage_ids() -> AsyncIterator[tuple[str, datetime, timedelta]]
                 yield coverage_id, dt, duration
 
 
+@alru_cache(ttl=3600)
+async def fetch_coverage_ids_cached() -> list[tuple[str, datetime, timedelta]]:
+    res = [c async for c in fetch_coverage_ids()]
+    if not res:
+        raise ValueError("No coverage ids found")
+    return res
+
+
 def fetch_rainfall_availability_local() -> Generator[AvailabilityPeriod]:
     for file in BASE_PATH.glob("*.gtif"):
         try:
@@ -126,32 +135,23 @@ def select_best_coverage_id(
     coverage_list: list of tuples (coverage_id, dt, period)
     """
     valid_coverages = [
-        c
-        for c in coverage_list
-        if c[1]
-        <= period.start
-        - timedelta(
-            hours=1,
-        )
-        and c[2] == period.span
+        c for c in coverage_list if c[1] <= period.start and c[2] == period.span
     ]
 
     if valid_coverages:
         # pick the coverageId of the latest past time
-        best = max(valid_coverages, key=lambda c: c[1])
+        return max(valid_coverages, key=lambda c: c[1])[0]
     else:
         return None
 
-    return best[0]
 
-
-async def fetch_rainfall(period: AvailabilityPeriod) -> BytesIO:
+async def fetch_rainfall(period: AvailabilityPeriod) -> bytes:
     # Determine the best coverageId for the period
     # If period is in the past, use the coverageId of that hour
     # Otherwise, use the latest coverageID
 
     #  Build list of all available TOTAL_WATER_PRECIPITATION coverageIds
-    coverage_list = [(cid, dt, span) async for cid, dt, span in fetch_coverage_ids()]
+    coverage_list = await fetch_coverage_ids_cached()
 
     if not coverage_list:
         raise ValueError("No matching coverageIds found in the capabilities XML.")
@@ -160,11 +160,12 @@ async def fetch_rainfall(period: AvailabilityPeriod) -> BytesIO:
     best_coverage_id = select_best_coverage_id(period, coverage_list)
     if best_coverage_id is None:
         raise ValueError("Could not find a coverageId for the requested period.")
+    print(best_coverage_id)
 
     # Create CoverageQueryParams
     params = CoverageQueryParams(
         coverage_id=best_coverage_id,
-        time=period.start,
+        time=period.start + period.span,
     )
     async with httpx.AsyncClient(timeout=60) as client:
         response = await client.get(
@@ -174,7 +175,7 @@ async def fetch_rainfall(period: AvailabilityPeriod) -> BytesIO:
         )
         _ = response.raise_for_status()
 
-        return BytesIO(response.content)
+        return response.content
 
 
 def fetch_rainfall_local(period: AvailabilityPeriod) -> Path:
@@ -190,13 +191,15 @@ if __name__ == "__main__":
     import asyncio
 
     async def test():
-        bytes = await fetch_rainfall(
-            AvailabilityPeriod(
-                start=datetime(year=2026, month=1, day=13, hour=12),
-                span=timedelta(hours=1),
-            )
-        )
-        with open("output.tiff", "wb") as f:
-            _ = f.write(bytes.getbuffer())
+        # bytes = await fetch_rainfall(
+        #     AvailabilityPeriod(
+        #         start=datetime(year=2026, month=1, day=13, hour=12),
+        #         span=timedelta(hours=1),
+        #     )
+        # )
+        # with open("output.tiff", "wb") as f:
+        #     _ = f.write(bytes.getbuffer())
+        async for id in fetch_coverage_ids():
+            print(id)
 
     asyncio.run(test())

@@ -1,4 +1,4 @@
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from typing import Annotated
 
 from fastapi import FastAPI, HTTPException, Query
@@ -38,10 +38,10 @@ async def get_latest_flow(query: Annotated[LatestFlowQueryParams, Query()]) -> F
             latitude=query.latitude,
             longitude=query.longitude,
             max_distance=query.max_distance,
-            start_date=date.today() - timedelta(days=1),
+            start_date=datetime.now() - timedelta(hours=1),
         )
     )
-    latest = latest_measure(res, measure="Q", measure_type="max", span="daily")
+    latest = latest_measure(res, measure="Q")
     if latest is None:
         raise HTTPException(
             404, "Yesterday's max flow rate not found for this location."

@@ -11,8 +11,10 @@ dependencies = []
 members = [
     "services/weather-data",
     "services/flow-data",
+    "services/flow-prediction",
     "services/gateway",
     "services/config-server",
+    "models/flow-prediction",
     "services/alert",
 ]
 
@@ -20,6 +22,7 @@ members = [
 root = [
     "services/weather-data/",
     "services/flow-data/",
+    "services/flow-prediction/",
     "services/gateway/",
     "services/config-server/",
     "services/alert/",
