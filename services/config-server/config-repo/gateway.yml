@@ -1,5 +1,6 @@
 routes:
   weather_data: "http://weather-data-service:8000"
   flow_data: "http://flow-data-service:8000"
+  alert: "http://alert-service:8000"
 
 log_level: "info"
