@@ -153,17 +153,18 @@ spec:
         app: weather-data-service
     spec:
       containers:
-      - name: weather-data-container
-        image: 172.0.0.39:5000/floodcast-uv-image:latest
-        imagePullPolicy: Always
-        env:
-        - name: SERVICE_NAME
-          value: "weather-data"
-      - name: METEO_FRANCE_AROME_API_KEY
-        valueFrom:
-          secretKeyRef:
-            name: meteo-france-arome
-            key: API_KEY
-            ports:
+        - name: weather-data-container
+          image: 172.0.0.39:5000/floodcast-uv-image:latest
+          imagePullPolicy: Always
+          env:
+            - name: SERVICE_NAME
+              value: "weather-data"
+            - name: METEO_FRANCE_AROME_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: meteo-france-arome
+                  key: API_KEY
+          ports:
             - containerPort: 8000
+
 
