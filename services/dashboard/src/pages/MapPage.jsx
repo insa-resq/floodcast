@@ -9,25 +9,33 @@ const ZOOM = 7;
 
 
 const fakeData = [
-  // Toulouse centre
-  { lat: 43.6047, lng: 1.4442, severity: 0.85, date: "2026-01-12" },
+  //  Nord & Nord-Ouest — Seine, Oise, Somme, Canche
+  { lat: 48.8566, lng: 2.3522, severity: 0.90, date: "2026-02-10" }, // Paris (Seine)
+  { lat: 49.4179, lng: 2.8261, severity: 0.75, date: "2026-02-10" }, // Compiègne (Oise)
+  { lat: 49.8941, lng: 2.2957, severity: 0.70, date: "2026-02-10" }, // Amiens (Somme)
+  { lat: 50.7214, lng: 1.6133, severity: 0.65, date: "2026-02-10" }, // Montreuil-sur-Mer (Canche)
 
-  // Première couronne
-  { lat: 43.6111, lng: 1.4991, severity: 0.65, date: "2026-01-12" }, // Balma
-  { lat: 43.5906, lng: 1.3895, severity: 0.92, date: "2026-01-12" }, // Blagnac
-  { lat: 43.5696, lng: 1.4026, severity: 0.55, date: "2026-01-12" }, // Tournefeuille
-  { lat: 43.6577, lng: 1.5026, severity: 0.78, date: "2026-01-12" }, // L'Union
-  { lat: 43.6675, lng: 1.4292, severity: 0.60, date: "2026-01-12" }, // Aucamville
-  { lat: 43.6333, lng: 1.4667, severity: 0.88, date: "2026-01-12" }, // Ramonville-Saint-Agne
+  //  Sud-Ouest — Dronne, Isle, Charente, Lot-et-Garonne
+  { lat: 45.1857, lng: 0.7216, severity: 0.85, date: "2026-02-12" }, // Périgueux (Isle)
+  { lat: 45.0486, lng: -0.7055, severity: 0.78, date: "2026-02-12" }, // Libourne (Dordogne)
+  { lat: 45.6484, lng: 0.1569, severity: 0.72, date: "2026-02-12" }, // Angoulême (Charente)
+  { lat: 44.2031, lng: 0.6212, severity: 0.80, date: "2026-02-12" }, // Agen (Garonne)
 
-  // Deuxième couronne
-  { lat: 43.5178, lng: 1.4986, severity: 0.70, date: "2026-01-12" }, // Muret
-  { lat: 43.7383, lng: 1.3707, severity: 0.58, date: "2026-01-12" }, // Grenade
-  { lat: 43.4599, lng: 1.3254, severity: 0.82, date: "2026-01-12" }, // Fonsorbes
-  { lat: 43.6486, lng: 1.5416, severity: 0.66, date: "2026-01-12" }, // Saint-Orens-de-Gameville
-  { lat: 43.7286, lng: 1.3458, severity: 0.73, date: "2026-01-12" }, // Seilh
-  { lat: 43.6947, lng: 1.4028, severity: 0.59, date: "2026-01-12" }, // Castelginest
+  //  Centre & Vallée de la Loire
+  { lat: 47.9029, lng: 1.9093, severity: 0.77, date: "2026-02-14" }, // Orléans (Loire)
+  { lat: 47.3941, lng: 0.6848, severity: 0.70, date: "2026-02-14" }, // Tours (Loire)
+
+  //  Sud-Est — Rhône & affluents
+  { lat: 45.7640, lng: 4.8357, severity: 0.88, date: "2026-02-16" }, // Lyon (Rhône)
+  { lat: 44.9334, lng: 4.8924, severity: 0.74, date: "2026-02-16" }, // Valence (Rhône)
+
+  //  Autres zones — Bretagne, Pays de la Loire, Méditerranée
+  { lat: 48.1173, lng: -1.6778, severity: 0.68, date: "2026-02-18" }, // Rennes (Vilaine)
+  { lat: 47.2184, lng: -1.5536, severity: 0.73, date: "2026-02-18" }, // Nantes (Loire)
+  { lat: 43.6108, lng: 3.8767, severity: 0.82, date: "2026-02-20" }, // Montpellier (Lez)
+  { lat: 43.2965, lng: 5.3698, severity: 0.76, date: "2026-02-20" }, // Marseille (Huveaune)
 ];
+
 
 
 export default function MapPage() {

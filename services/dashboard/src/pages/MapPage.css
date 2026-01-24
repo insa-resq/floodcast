@@ -98,8 +98,8 @@
 .alerts {
   padding: 0 1rem 1rem;
 
-  flex: 1;                    /* 🔥 prend l’espace restant */
-  overflow-y: auto;           /* 🔥 SCROLL ICI */
+  flex: 1;                    
+  overflow-y: auto;           
 }
 
 .alert-btn:hover {
