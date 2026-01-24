@@ -168,3 +168,42 @@ spec:
             - containerPort: 8000
 
 
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: alert-service
+spec:
+  selector:
+    app: alert-service
+  ports:
+    - name: local-port
+      port: 8000
+      targetPort: 8000
+      protocol: TCP
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alert-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: alert-service
+  template:
+    metadata:
+      labels:
+        app: alert-service
+    spec:
+      containers:
+        - name: alert-container
+          image: 172.0.0.39:5000/floodcast-uv-image:latest
+          imagePullPolicy: Always
+          env:
+            - name: SERVICE_NAME
+              value: "alert"
+          ports:
+            - containerPort: 8000
+
