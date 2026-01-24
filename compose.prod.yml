@@ -51,6 +51,22 @@ services:
       config-service:
         condition: service_healthy
 
+  alert-service:
+    image: floodcast/floodcast:latest
+    container_name: floodcast-alert
+    command: >
+      uv run --package alert --with fastapi --
+      fastapi run services/alert/app/main.py
+      --host 0.0.0.0 --port 8000
+    environment:
+      SERVICE_NAME: alert
+    ports:
+      - "8007:8000"
+    restart: always
+    depends_on:
+      config-service:
+        condition: service_healthy
+
 networks:
   default:
     name: floodcast-network

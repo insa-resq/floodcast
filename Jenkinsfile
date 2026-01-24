@@ -53,6 +53,7 @@ pipeline {
             kubectl rollout status deployment/flow-data-service
             kubectl rollout status deployment/gateway-service
             kubectl rollout status deployment/weather-data-service
+            kubectl rollout status deployement/alert-service
           '''
         }
       }
