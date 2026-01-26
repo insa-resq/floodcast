@@ -1,0 +1,184 @@
+/* ===== Layout ===== */
+.map-layout {
+  height: 100vh;
+  width: 100vw;
+  position: relative;
+}
+
+/* ===== Map ===== */
+.map-container {
+  height: 100%;
+  width: 100%;
+}
+
+/* ===== Sidebar (overlay) ===== */
+.sidebar {
+  position: absolute;
+  top: 0;
+  right: 0;
+
+  height: 100%;
+  width: 300px;
+
+  background: #0f172a;
+  color: white;
+
+  display: flex;              
+  flex-direction: column;     
+
+  transition: width 0.3s ease;
+  overflow: hidden;           /* 🔥 IMPORTANT */
+  z-index: 500;
+}
+/* Sidebar closed */
+.sidebar.closed {
+  width: 30px;
+  background: #020617;
+}
+
+/* Hide everything except arrow when closed */
+.sidebar.closed *:not(.arrow-fixed) {
+  display: none;
+}
+
+/* ===== Arrow (integrated in border) ===== */
+.arrow-fixed {
+  position: absolute;
+  top: 50%;
+  left: 0;                          /* 👈 CÔTÉ CARTE */
+  transform: translate(-50%, -50%); /* 👈 sort vers la carte */
+  z-index: 10;
+
+  width: 16px;
+  height: 38px; 
+
+  background: #0f172a;
+  color: white;
+
+  border: 1px solid #1e293b;
+  border-right: none;
+  border-radius: 8px 0 0 8px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+
+.arrow-fixed:hover {
+  background: #020617;
+}
+
+/* ===== Header ===== */
+.sidebar-header {
+  padding: 0.75rem;
+  background: #020617;
+  font-size: 0.85rem;
+}
+
+/* ===== Alert Users button ===== */
+.alert-btn {
+  margin: 1rem;
+  width: calc(100% - 2rem);
+
+  background: #dc2626;
+  color: white;
+
+  border: none;
+  padding: 0.6rem;
+  border-radius: 8px;
+
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.alerts {
+  padding: 0 1rem 1rem;
+
+  flex: 1;                    
+  overflow-y: auto;           
+}
+
+.alert-btn:hover {
+  background: #b91c1c;
+}
+
+/* ===== Alerts list ===== */
+.alerts {
+  padding: 0 1rem 1rem;
+}
+
+.alert-card {
+  background: #1e293b;
+  border-radius: 8px;
+  padding: 0.6rem;
+  margin-bottom: 0.6rem;
+  border-left: 4px solid;
+}
+
+.alert-card.high {
+  border-color: #ef4444;
+}
+
+.alert-card.medium {
+  border-color: #f59e0b;
+}
+
+.small {
+  font-size: 0.75rem;
+  opacity: 0.8;
+}
+.sidebar-header {
+  padding: 0.75rem 1rem;
+  background: #020617;
+  font-size: 0.85rem;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.sidebar-header .date {
+  opacity: 0.7;
+}
+
+.sidebar-header .user-name {
+  font-weight: 600;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  font-size: 1.1rem;
+}
+
+
+
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  border-top: 4px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 12px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+

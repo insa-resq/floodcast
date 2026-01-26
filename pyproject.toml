@@ -16,6 +16,7 @@ members = [
     "services/config-server",
     "models/flow-prediction",
     "services/alert",
+    "services/dashboard",
 ]
 
 [tool.ty.environment]
@@ -26,4 +27,5 @@ root = [
     "services/gateway/",
     "services/config-server/",
     "services/alert/",
+    "services/dashboard/",
 ]
